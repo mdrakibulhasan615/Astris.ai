@@ -154,7 +154,7 @@ export default function PaperViewer() {
 
     try {
       // Capture the current view (PDF + Annotations)
-      const canvas = await html2canvas(containerRef.current, { scale: 1.5 });
+      const canvas = await html2canvas(containerRef.current, { scale: 1.5, useCORS: true });
       const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
       const response = await ai.models.generateContent({
@@ -238,9 +238,9 @@ export default function PaperViewer() {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error marking paper:", error);
-      alert("Failed to mark paper. Please try again.");
+      alert("Failed to mark paper: " + (error?.message || JSON.stringify(error) || "Unknown error"));
     } finally {
       setMarking(false);
       setMarkingProgress('');
@@ -264,7 +264,7 @@ export default function PaperViewer() {
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         if (containerRef.current) {
-          const canvas = await html2canvas(containerRef.current, { scale: 1.2 });
+          const canvas = await html2canvas(containerRef.current, { scale: 1.2, useCORS: true });
           const base64Image = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
           images.push({
             inlineData: { data: base64Image, mimeType: 'image/jpeg' }
@@ -375,9 +375,9 @@ export default function PaperViewer() {
       // Go back to page 1 to show the total score
       setPageNumber(1);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error marking whole paper:", error);
-      alert("Failed to mark the whole paper. Please try again.");
+      alert("Failed to mark the whole paper: " + (error?.message || JSON.stringify(error) || "Unknown error"));
     } finally {
       setMarking(false);
       setMarkingProgress('');
