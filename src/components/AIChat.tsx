@@ -27,7 +27,7 @@ export default function AIChat({ onClose, paperContext }: { onClose: () => void,
 
     try {
       const chat = ai.chats.create({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview',
         config: {
           systemInstruction: `You are an expert tutor helping a student with a past paper. The paper context is: ${paperContext}. Be encouraging, clear, and guide them to the answer rather than just giving it to them immediately.`,
         }

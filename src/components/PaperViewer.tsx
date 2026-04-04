@@ -158,7 +158,7 @@ export default function PaperViewer() {
       const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             { text: `You are an expert examiner marking a student's past paper. Analyze the provided image, which contains the original exam paper and the student's handwritten answers (drawn over it). 
@@ -302,7 +302,7 @@ export default function PaperViewer() {
       }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             { text: prompt },
