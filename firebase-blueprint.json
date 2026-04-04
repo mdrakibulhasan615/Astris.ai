@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A student using the app. Publicly readable for leaderboards.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "papersCompleted": { "type": "number", "description": "Number of papers completed for gamification" }
+      },
+      "required": ["uid", "papersCompleted"]
+    },
+    "UserPaper": {
+      "title": "User Paper",
+      "description": "A paper that a student is working on or has completed",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "annotations": { "type": "string", "description": "Stringified JSON of Konva drawing data" },
+        "status": { "type": "string", "enum": ["in-progress", "completed"] },
+        "score": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "fileUrl", "status", "updatedAt"]
+    },
+    "Friendship": {
+      "title": "Friendship",
+      "description": "Connection between two users",
+      "type": "object",
+      "properties": {
+        "user1Id": { "type": "string" },
+        "user2Id": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted"] }
+      },
+      "required": ["user1Id", "user2Id", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/user_papers/{paperId}": {
+      "schema": { "$ref": "#/entities/UserPaper" },
+      "description": "Papers being worked on by users"
+    },
+    "/friendships/{friendshipId}": {
+      "schema": { "$ref": "#/entities/Friendship" },
+      "description": "Friend connections"
+    }
+  }
+}
