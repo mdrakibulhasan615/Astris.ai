@@ -1,8 +1,9 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
+import { Capacitor } from '@capacitor/core';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -12,9 +13,29 @@ export const storage = getStorage(app);
 export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
   try {
-    await signInWithPopup(auth, provider);
+    if (Capacitor.isNativePlatform()) {
+      // Mobile apps block popups, so we must use redirect
+      await signInWithRedirect(auth, provider);
+    } else {
+      // Web browsers can use popups
+      await signInWithPopup(auth, provider);
+    }
   } catch (error) {
     console.error("Error signing in with Google", error);
+  }
+};
+
+export const signInWithEmail = async (email: string, pass: string) => {
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (error: any) {
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      // If user doesn't exist, create them
+      await createUserWithEmailAndPassword(auth, email, pass);
+    } else {
+      console.error("Error signing in with Email", error);
+      throw error;
+    }
   }
 };
 
