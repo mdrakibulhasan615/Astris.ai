@@ -9,6 +9,9 @@ import { useAuth } from '../contexts/AuthContext';
 import html2canvas from 'html2canvas';
 import { GoogleGenAI } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import AIChat from './AIChat';
 import localforage from 'localforage';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -387,35 +390,35 @@ export default function PaperViewer() {
   if (!paper) return <div className="p-8">Loading paper...</div>;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 relative">
+    <div className="flex flex-col h-screen bg-[#F5F5F7] dark:bg-[#0A0A0A] relative font-sans transition-colors duration-300">
       {/* Top Bar */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm z-10">
+      <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 px-4 md:px-8 py-4 flex items-center justify-between shadow-sm z-30 relative">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={() => navigate('/')} className="p-2.5 bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full transition-all shadow-sm active:scale-95 border border-gray-200/50 dark:border-gray-700/50">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold truncate max-w-[200px] md:max-w-md">{paper.title}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white truncate max-w-[200px] md:max-w-md">{paper.title}</h1>
         </div>
         
-        <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg hidden sm:flex">
+        <div className="flex items-center gap-2 bg-gray-200/50 dark:bg-gray-800/50 p-1.5 rounded-2xl hidden sm:flex backdrop-blur-sm">
           <button 
             onClick={() => setTool('pen')}
-            className={`p-2 rounded-md transition-colors ${tool === 'pen' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:bg-gray-200'}`}
+            className={`p-2.5 rounded-xl transition-all ${tool === 'pen' ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-500 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
           >
             <Pen className="w-5 h-5" />
           </button>
           <button 
             onClick={() => setTool('eraser')}
-            className={`p-2 rounded-md transition-colors ${tool === 'eraser' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:bg-gray-200'}`}
+            className={`p-2.5 rounded-xl transition-all ${tool === 'eraser' ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-500 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
           >
             <Eraser className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowChat(true)}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-medium text-sm md:text-base"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 text-indigo-500 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-sm transition-all font-semibold shadow-[0_2px_10px_rgb(0,0,0,0.02)] active:scale-95 text-sm md:text-base"
           >
             <MessageSquare className="w-4 h-4" />
             <span className="hidden md:inline">AI Help</span>
@@ -423,7 +426,7 @@ export default function PaperViewer() {
           <button 
             onClick={handleMarkPaper}
             disabled={marking}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium text-sm md:text-base"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 disabled:opacity-50 transition-all font-semibold shadow-md shadow-indigo-500/25 active:scale-95 text-sm md:text-base"
           >
             {marking && !markingProgress.includes('Scanning') ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
             <span className="hidden md:inline">{marking && !markingProgress.includes('Scanning') ? 'Marking...' : 'Mark Page'}</span>
@@ -433,7 +436,7 @@ export default function PaperViewer() {
             <button 
               onClick={handleMarkWholePaper}
               disabled={marking}
-              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors font-medium text-sm md:text-base"
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all font-semibold shadow-md shadow-emerald-500/25 active:scale-95 text-sm md:text-base"
             >
               {marking && markingProgress.includes('Scanning') ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               <span className="hidden md:inline">{marking && markingProgress.includes('Scanning') ? 'Scanning...' : 'Mark Whole Paper'}</span>
@@ -444,16 +447,16 @@ export default function PaperViewer() {
       </div>
 
       {/* Mobile Tools (visible only on small screens) */}
-      <div className="sm:hidden bg-white border-b border-gray-200 p-2 flex justify-center gap-2 z-10">
+      <div className="sm:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 p-3 flex justify-center gap-3 z-20 sticky top-0">
         <button 
           onClick={() => setTool('pen')}
-          className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${tool === 'pen' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          className={`flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 font-semibold ${tool === 'pen' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
         >
           <Pen className="w-4 h-4" /> Pen
         </button>
         <button 
           onClick={() => setTool('eraser')}
-          className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${tool === 'eraser' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          className={`flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 font-semibold ${tool === 'eraser' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
         >
           <Eraser className="w-4 h-4" /> Eraser
         </button>
@@ -462,23 +465,25 @@ export default function PaperViewer() {
       {/* Main Workspace */}
       <div className="flex-1 overflow-auto flex flex-col items-center p-4 md:p-8 relative">
         {markingProgress && (
-          <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm text-center border border-gray-100">
-              <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">AI is working</h3>
-              <p className="text-gray-600">{markingProgress}</p>
+          <div className="absolute inset-0 z-50 bg-white/40 dark:bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl p-10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] flex flex-col items-center max-w-sm text-center border border-white dark:border-gray-700">
+              <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-6 shadow-inner dark:shadow-none">
+                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">AI is working</h3>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">{markingProgress}</p>
             </div>
           </div>
         )}
         
         <div className="flex flex-col xl:flex-row gap-8 items-start w-full max-w-[1200px] justify-center">
           <div className="flex-1 w-full flex justify-center">
-            <div ref={containerRef} className="relative shadow-xl bg-white" style={{ width: containerWidth, height: stageHeight }}>
+            <div ref={containerRef} className="relative shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-xl overflow-hidden border border-gray-200/50" style={{ width: containerWidth, height: stageHeight }}>
               {pdfFile && (
                 <Document
                   file={pdfFile}
                   onLoadSuccess={onDocumentLoadSuccess}
-                  className="absolute inset-0"
+                  className="absolute inset-0 bg-white"
                 >
                   <Page 
                     pageNumber={pageNumber} 
@@ -525,9 +530,9 @@ export default function PaperViewer() {
                         y={ann.y}
                         text={ann.text}
                         fontSize={ann.fontSize || 16}
-                        fill={ann.color || 'red'}
-                        fontFamily="sans-serif"
-                        fontStyle="bold"
+                        fill={ann.color || '#EF4444'}
+                        fontFamily="Inter, sans-serif"
+                        fontStyle="600"
                         width={800 - ann.x - 20}
                         wrap="word"
                       />
@@ -540,13 +545,15 @@ export default function PaperViewer() {
 
           {/* Feedback Panel */}
           {feedback && (
-            <div className="w-full xl:w-80 bg-white rounded-xl shadow-lg border border-gray-200 p-6 xl:sticky xl:top-8 shrink-0">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
+            <div className="w-full xl:w-80 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-white dark:border-gray-800 p-6 xl:sticky xl:top-8 shrink-0">
+              <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+                <div className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 p-1.5 rounded-xl">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
                 AI Feedback
               </h3>
-              <div className="prose prose-sm max-w-none text-gray-700">
-                <ReactMarkdown>{feedback}</ReactMarkdown>
+              <div className="prose prose-sm max-w-none prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-headings:text-gray-900 dark:prose-headings:text-white prose-strong:text-gray-900 dark:prose-strong:text-white">
+                <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{feedback}</ReactMarkdown>
               </div>
             </div>
           )}
@@ -555,19 +562,19 @@ export default function PaperViewer() {
       
       {/* Pagination */}
       {numPages && numPages > 1 && (
-        <div className="bg-white border-t border-gray-200 p-4 flex justify-center items-center gap-4 z-10">
+        <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 p-4 flex justify-center items-center gap-6 z-20 pb-safe">
           <button 
             disabled={pageNumber <= 1}
             onClick={() => setPageNumber(p => p - 1)}
-            className="px-4 py-2 bg-gray-100 rounded-lg disabled:opacity-50 font-medium"
+            className="px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 rounded-xl disabled:opacity-50 font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm active:scale-95"
           >
             Previous
           </button>
-          <span className="font-medium text-gray-600">Page {pageNumber} of {numPages}</span>
+          <span className="font-semibold text-gray-600 dark:text-gray-400 bg-gray-100/80 dark:bg-gray-800/80 px-4 py-2 rounded-xl backdrop-blur-sm">Page {pageNumber} of {numPages}</span>
           <button 
             disabled={pageNumber >= numPages}
             onClick={() => setPageNumber(p => p + 1)}
-            className="px-4 py-2 bg-gray-100 rounded-lg disabled:opacity-50 font-medium"
+            className="px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 rounded-xl disabled:opacity-50 font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm active:scale-95"
           >
             Next
           </button>
@@ -579,6 +586,16 @@ export default function PaperViewer() {
         <AIChat 
           onClose={() => setShowChat(false)} 
           paperContext={`Paper Title: ${paper.title}, Current Page: ${pageNumber}`} 
+          onCaptureScreenshot={async () => {
+            if (!containerRef.current) return null;
+            try {
+              const canvas = await html2canvas(containerRef.current, { scale: 1 });
+              return canvas.toDataURL('image/jpeg').split(',')[1];
+            } catch (err) {
+              console.error('Failed to capture screenshot', err);
+              return null;
+            }
+          }}
         />
       )}
     </div>
