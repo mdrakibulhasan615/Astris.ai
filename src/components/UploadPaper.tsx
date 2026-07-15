@@ -11,7 +11,7 @@ export default function UploadPaper() {
   const [title, setTitle] = useState('');
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,11 +25,11 @@ export default function UploadPaper() {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !currentUser) return;
+    if (!file || !user) return;
 
     setUploading(true);
     const paperId = doc(collection(db, 'papers')).id;
-    const storageRef = ref(storage, `papers/${currentUser.uid}/${paperId}_${file.name}`);
+    const storageRef = ref(storage, `papers/${user.uid}/${paperId}_${file.name}`);
 
     const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -49,7 +49,7 @@ export default function UploadPaper() {
         try {
           await setDoc(doc(db, 'papers', paperId), {
             id: paperId,
-            uploaderUid: currentUser.uid,
+            uploaderUid: user.uid,
             title: title || file.name,
             storagePath: downloadURL,
             createdAt: new Date().toISOString()
@@ -60,7 +60,7 @@ export default function UploadPaper() {
           await setDoc(doc(db, 'attempts', attemptId), {
             id: attemptId,
             paperId: paperId,
-            userId: currentUser.uid,
+            userId: user.uid,
             annotations: '[]',
             status: 'in-progress',
             updatedAt: new Date().toISOString()

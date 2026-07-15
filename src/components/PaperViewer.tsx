@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Stage, Layer, Line, Text } from 'react-konva';
-import { ArrowLeft, Pen, Eraser, CheckCircle, MessageSquare, Loader2 } from 'lucide-react';
+import { ArrowLeft, Pen, Eraser, Highlighter, Circle, MessageSquare, Loader2, Minus, MousePointer2, CheckCircle, PenTool } from 'lucide-react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,7 +23,14 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 const getAiClient = () => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ 
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      }
+    }
+  });
 };
 
 export default function PaperViewer() {
@@ -37,7 +44,11 @@ export default function PaperViewer() {
   const [pdfFile, setPdfFile] = useState<any>(null);
   
   // Drawing state
-  const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
+  const [tool, setTool] = useState<'pen' | 'eraser' | 'highlighter' | 'select'>('pen');
+  const [pencilOnly, setPencilOnly] = useState(false);
+  const [penColor, setPenColor] = useState<string>('#000000');
+  const [penSize, setPenSize] = useState<number>(3);
+  const [eraserSize, setEraserSize] = useState<number>(20);
   const [lines, setLines] = useState<any[]>([]);
   const [aiAnnotations, setAiAnnotations] = useState<any[]>([]);
   const isDrawing = useRef(false);
@@ -69,6 +80,49 @@ export default function PaperViewer() {
 
   const scale = containerWidth / 800;
   const stageHeight = 1131 * scale;
+
+  const captureWorkspaceScreenshot = async (customScale = 1.2): Promise<string | null> => {
+    if (!containerRef.current) return null;
+    try {
+      const pdfCanvas = containerRef.current.querySelector('.react-pdf__Page__canvas') as HTMLCanvasElement 
+        || containerRef.current.querySelector('canvas') as HTMLCanvasElement;
+        
+      if (pdfCanvas) {
+        // Create a merged canvas
+        const mergedCanvas = document.createElement('canvas');
+        mergedCanvas.width = pdfCanvas.width;
+        mergedCanvas.height = pdfCanvas.height;
+        const ctx = mergedCanvas.getContext('2d');
+        if (ctx) {
+          // 1. Draw the PDF canvas
+          ctx.drawImage(pdfCanvas, 0, 0);
+          
+          // 2. Draw the Konva stage canvas if it exists
+          if (stageRef.current) {
+            // Match the Konva canvas size to the PDF canvas size exactly
+            const pixelRatio = pdfCanvas.width / containerWidth;
+            const konvaCanvas = stageRef.current.toCanvas({ pixelRatio });
+            if (konvaCanvas) {
+              ctx.drawImage(konvaCanvas, 0, 0);
+            }
+          }
+          
+          return mergedCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+        }
+      }
+      
+      // Fallback to html2canvas if pdfCanvas was not found
+      const canvas = await html2canvas(containerRef.current, { 
+        scale: customScale, 
+        useCORS: true, 
+        logging: false 
+      });
+      return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    } catch (err) {
+      console.error('Failed to capture screenshot', err);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const fetchPaper = async () => {
@@ -110,16 +164,38 @@ export default function PaperViewer() {
     fetchPaper();
   }, [id, user]);
 
-  const handleMouseDown = (e: any) => {
+  const handlePointerDown = (e: any) => {
+    if (tool === 'select') return;
+    
+    // Ignore touch events if pencilOnly is enabled (allow finger scrolling)
+    if (pencilOnly && e.evt.pointerType === 'touch') return;
+    
+    const isEraserEvent = e.evt.pointerType === 'eraser' || (e.evt.button === 5);
+    const activeTool = isEraserEvent ? 'eraser' : tool;
+    
     isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
-    // Adjust for scale
     const x = pos.x / scale;
     const y = pos.y / scale;
-    setLines([...lines, { tool, points: [x, y], page: pageNumber }]);
+    
+    let currentSize = activeTool === 'eraser' ? eraserSize : penSize;
+    let currentColor = penColor;
+    
+    if (activeTool === 'highlighter') {
+      currentSize = penSize * 4;
+      currentColor = penColor + '80'; // 50% opacity
+    }
+
+    setLines([...lines, { 
+      tool: activeTool, 
+      points: [x, y], 
+      page: pageNumber,
+      color: currentColor,
+      size: currentSize
+    }]);
   };
 
-  const handleMouseMove = (e: any) => {
+  const handlePointerMove = (e: any) => {
     if (!isDrawing.current) return;
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
@@ -133,7 +209,7 @@ export default function PaperViewer() {
     setLines(lines.concat());
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = () => {
     isDrawing.current = false;
     saveAnnotations();
   };
@@ -153,6 +229,24 @@ export default function PaperViewer() {
 
   const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max);
 
+  const parseScoreToPercent = (scoreStr: any): number => {
+    if (!scoreStr) return 0;
+    if (typeof scoreStr === 'number') return scoreStr;
+    
+    const str = String(scoreStr).trim();
+    if (str.includes('/')) {
+      const parts = str.split('/');
+      const scored = parseFloat(parts[0]);
+      const total = parseFloat(parts[1]);
+      if (!isNaN(scored) && !isNaN(total) && total > 0) {
+        return Math.round((scored / total) * 100);
+      }
+    }
+    
+    const parsed = parseInt(str);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   const handleMarkPaper = async () => {
     if (!containerRef.current || !id || !user) return;
     setMarking(true);
@@ -168,28 +262,38 @@ export default function PaperViewer() {
       }
 
       // Capture the current view (PDF + Annotations)
-      const canvas = await html2canvas(containerRef.current, { scale: 1.5, useCORS: true });
-      const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      const base64Image = await captureWorkspaceScreenshot(1.5);
+      if (!base64Image) {
+        setFeedback("Failed to capture a screenshot of the page.");
+        setMarkingProgress(null);
+        return;
+      }
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.5-flash',
         contents: {
           parts: [
-            { text: `You are an expert examiner marking a student's past paper. Analyze the provided image, which contains the original exam paper and the student's handwritten answers (drawn over it). 
+            { text: `You are an expert examiner marking a student's past paper. Analyze the provided image, which contains the original exam paper and the student's handwritten answers (drawn over it in colored/black strokes). 
             
             Assume the paper's coordinate system is exactly 800 pixels wide and 1131 pixels high.
             
+            CRITICAL GRADING RULES:
+            1. The student's answers are ONLY indicated by custom handwritten strokes, text, or sketches drawn/layered OVER the original printed paper.
+            2. If a question has NO student handwriting, markings, or drawings in its answer area, it is completely blank/unanswered. You MUST award exactly 0 marks for that question.
+            3. DO NOT hallucinate student answers. Do NOT assume the printed question text or printed diagrams are student answers.
+            4. If the page contains no student drawings or writing at all, the score for this page MUST be exactly "0" (e.g. "0/5" or "0/15" depending on the page's total marks).
+            
             Please provide:
-            1. A score out of the total possible marks for this page (e.g., "4/5" or "15/20").
+            1. A score out of the total possible marks for this page (e.g., "4/5" or "0/20").
             2. Detailed feedback on what they did right and wrong.
             3. An array of "corrections" to be written directly on the paper. 
-               - Include the marks for each question next to the question (e.g., "4/5").
-               - Provide short text corrections (e.g., "Missing units", "Formula error").
+               - Include the marks for each question next to the question (e.g., "4/5" or "0/3").
+               - Provide short text corrections (e.g., "Missing units", "Formula error", "No attempt").
                - Provide exact x and y coordinates. IMPORTANT: x MUST be between 50 and 550 (to leave room for text wrapping), and y MUST be between 50 and 1080.
-               - Use "red" for mistakes/deductions and "green" for correct parts/full marks.
+               - Use "red" for mistakes/deductions/unanswered and "green" for correct parts/full marks.
             
             Format your response as JSON with keys: 
-            "score" (string, e.g., "15/20"), 
+            "score" (string, e.g., "15/20" or "0/15"), 
             "feedback" (string, markdown formatted), 
             "corrections" (array of objects with "text" (string), "x" (number), "y" (number), "color" (string))` },
             { inlineData: { data: base64Image, mimeType: 'image/jpeg' } }
@@ -235,8 +339,9 @@ export default function PaperViewer() {
       
       // Update score and annotations in DB
       const docRef = doc(db, 'user_papers', id);
+      const numericScore = parseScoreToPercent(result.score) || paper.score || 0;
       await updateDoc(docRef, {
-        score: result.score || paper.score || 0,
+        score: numericScore,
         status: 'completed',
         aiAnnotations: JSON.stringify(updatedAiAnnotations),
         updatedAt: new Date().toISOString()
@@ -277,9 +382,8 @@ export default function PaperViewer() {
         // Wait for react-pdf to render the new page and konva to update
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        if (containerRef.current) {
-          const canvas = await html2canvas(containerRef.current, { scale: 1.2, useCORS: true });
-          const base64Image = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+        const base64Image = await captureWorkspaceScreenshot(1.2);
+        if (base64Image) {
           images.push({
             inlineData: { data: base64Image, mimeType: 'image/jpeg' }
           });
@@ -288,22 +392,28 @@ export default function PaperViewer() {
 
       setMarkingProgress(`AI is analyzing the entire paper...`);
 
-      const prompt = `You are an expert examiner marking a student's past paper. I am providing images of all ${numPages} pages of the exam paper, in order. The student's handwritten answers are drawn over the original paper.
+      const prompt = `You are an expert examiner marking a student's past paper. I am providing images of all ${numPages} pages of the exam paper, in order. The student's handwritten answers are drawn over the original paper in colored/black strokes.
 
       Assume each page's coordinate system is exactly 800 pixels wide and 1131 pixels high.
 
+      CRITICAL GRADING RULES:
+      1. The student's answers are ONLY indicated by custom handwritten strokes, text, or sketches drawn/layered OVER the original printed paper.
+      2. If a question has NO student handwriting, markings, or drawings in its answer area, it is completely blank/unanswered. You MUST award exactly 0 marks for that question.
+      3. DO NOT hallucinate student answers. Do NOT assume the printed question text or printed diagrams are student answers.
+      4. The total score MUST only sum up the marks earned from actual handwritten/drawn answers. For example, if a paper has 80 total possible marks, and they only answered one 1-mark question correctly and left everything else blank, their score MUST be exactly "1/80", NOT "35/80" or any other number.
+
       Please provide:
-      1. A total score for the entire paper. You MUST calculate the total marks scored and the total possible marks for the entire paper. Format this EXACTLY as "Scored/Total" (e.g., "45/80" or "85/100").
+      1. A total score for the entire paper. You MUST calculate the total marks scored and the total possible marks for the entire paper. Format this EXACTLY as "Scored/Total" (e.g., "1/35" or "15/80").
       2. Overall feedback for the entire paper.
       3. For EACH page, an array of "corrections" to be written directly on the paper. 
-         - Include the marks for each question next to the question (e.g., "4/5").
-         - Provide short text corrections (e.g., "Missing units", "Formula error"). Keep them concise.
+         - Include the marks for each question next to the question (e.g., "0/5" or "1/1").
+         - Provide short text corrections (e.g., "No attempt", "Missing units", "Formula error"). Keep them concise.
          - Provide exact x and y coordinates. IMPORTANT: x MUST be between 50 and 550 (to leave room for text wrapping), and y MUST be between 50 and 1080.
-         - Use "red" for mistakes/deductions and "green" for correct parts/full marks.
+         - Use "red" for mistakes/deductions/unanswered and "green" for correct parts/full marks.
 
       Format your response as JSON:
       {
-        "totalScore": "85/100",
+        "totalScore": "1/35",
         "overallFeedback": "string",
         "pages": [
           {
@@ -323,7 +433,7 @@ export default function PaperViewer() {
       }
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.5-flash',
         contents: {
           parts: [
             { text: prompt },
@@ -373,7 +483,7 @@ export default function PaperViewer() {
       
       // Update DB
       const docRef = doc(db, 'user_papers', id);
-      const numericScore = parseInt(result.totalScore?.split('/')[0]) || paper.score || 0;
+      const numericScore = parseScoreToPercent(result.totalScore) || paper.score || 0;
       
       await updateDoc(docRef, {
         score: numericScore,
@@ -420,17 +530,75 @@ export default function PaperViewer() {
         
         <div className="flex items-center gap-2 bg-gray-200/50 dark:bg-gray-800/50 p-1.5 rounded-2xl hidden sm:flex backdrop-blur-sm">
           <button 
+            onClick={() => setTool('select')}
+            title="Select/Scroll"
+            className={`p-2.5 rounded-xl transition-all ${tool === 'select' ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-500 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+          >
+            <MousePointer2 className="w-5 h-5" />
+          </button>
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1"></div>
+          <button 
             onClick={() => setTool('pen')}
+            title="Pen"
             className={`p-2.5 rounded-xl transition-all ${tool === 'pen' ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-500 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
           >
             <Pen className="w-5 h-5" />
           </button>
           <button 
+            onClick={() => setTool('highlighter')}
+            title="Highlighter"
+            className={`p-2.5 rounded-xl transition-all ${tool === 'highlighter' ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-500 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+          >
+            <Highlighter className="w-5 h-5" />
+          </button>
+          <button 
             onClick={() => setTool('eraser')}
+            title="Eraser"
             className={`p-2.5 rounded-xl transition-all ${tool === 'eraser' ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-500 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
           >
             <Eraser className="w-5 h-5" />
           </button>
+          
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1"></div>
+          
+          <button 
+            onClick={() => setPencilOnly(!pencilOnly)}
+            title="Draw with Apple Pencil Only"
+            className={`p-2.5 rounded-xl transition-all ${pencilOnly ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-500 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+          >
+            <PenTool className="w-5 h-5" />
+          </button>
+          
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1"></div>
+          
+          <div className="flex gap-1.5 px-1">
+            {tool !== 'eraser' ? (
+              ['#000000', '#EF4444', '#3B82F6', '#10B981'].map(color => (
+                <button
+                  key={color}
+                  onClick={() => setPenColor(color)}
+                  className={`w-6 h-6 rounded-full border-2 transition-transform ${penColor === color ? 'scale-110 border-white shadow-sm dark:border-gray-300' : 'border-transparent hover:scale-105'}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))
+            ) : (
+              <div className="w-6 h-6" /> // Placeholder to maintain spacing
+            )}
+          </div>
+
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1"></div>
+          
+          <div className="flex items-center gap-1">
+            {(tool === 'eraser' ? [10, 20, 40] : [2, 4, 8]).map(size => (
+              <button
+                key={size}
+                onClick={() => tool === 'eraser' ? setEraserSize(size) : setPenSize(size)}
+                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${(tool === 'eraser' ? eraserSize : penSize) === size ? 'bg-white dark:bg-gray-700 shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              >
+                <div className="bg-gray-800 dark:bg-gray-200 rounded-full" style={{ width: size === 2 || size === 10 ? 4 : size === 4 || size === 20 ? 6 : 10, height: size === 2 || size === 10 ? 4 : size === 4 || size === 20 ? 6 : 10 }}></div>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -450,7 +618,7 @@ export default function PaperViewer() {
             <span className="hidden md:inline">{marking && !markingProgress.includes('Scanning') ? 'Marking...' : 'Mark Page'}</span>
             <span className="md:hidden">Mark</span>
           </button>
-          {numPages && pageNumber === numPages && (
+          {numPages && (
             <button 
               onClick={handleMarkWholePaper}
               disabled={marking}
@@ -465,19 +633,65 @@ export default function PaperViewer() {
       </div>
 
       {/* Mobile Tools (visible only on small screens) */}
-      <div className="sm:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 p-3 flex justify-center gap-3 z-20 sticky top-0">
-        <button 
-          onClick={() => setTool('pen')}
-          className={`flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 font-semibold ${tool === 'pen' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
-        >
-          <Pen className="w-4 h-4" /> Pen
-        </button>
-        <button 
-          onClick={() => setTool('eraser')}
-          className={`flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 font-semibold ${tool === 'eraser' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
-        >
-          <Eraser className="w-4 h-4" /> Eraser
-        </button>
+      <div className="sm:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 p-2 flex flex-col gap-2 z-20 sticky top-0">
+        <div className="flex justify-center gap-2">
+          <button 
+            onClick={() => setTool('select')}
+            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 font-semibold text-sm ${tool === 'select' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+          >
+            <MousePointer2 className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => setTool('pen')}
+            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 font-semibold text-sm ${tool === 'pen' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+          >
+            <Pen className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => setTool('highlighter')}
+            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 font-semibold text-sm ${tool === 'highlighter' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+          >
+            <Highlighter className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => setTool('eraser')}
+            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 font-semibold text-sm ${tool === 'eraser' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+          >
+            <Eraser className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => setPencilOnly(!pencilOnly)}
+            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 font-semibold text-sm ${pencilOnly ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+            title="Pencil Only"
+          >
+            <PenTool className="w-4 h-4" />
+          </button>
+        </div>
+        {tool !== 'select' && (
+          <div className="flex justify-between items-center px-1">
+            <div className="flex gap-2">
+              {(tool === 'pen' || tool === 'highlighter') ? ['#000000', '#EF4444', '#3B82F6', '#10B981'].map(color => (
+                <button
+                  key={color}
+                  onClick={() => setPenColor(color)}
+                  className={`w-6 h-6 rounded-full border-2 transition-transform ${penColor === color ? 'scale-110 border-indigo-500 dark:border-indigo-400 shadow-sm' : 'border-transparent'}`}
+                  style={{ backgroundColor: color }}
+                />
+              )) : <div></div>}
+            </div>
+            <div className="flex gap-2 items-center">
+              {(tool === 'eraser' ? [10, 20, 40] : [2, 4, 8]).map(size => (
+                <button
+                  key={size}
+                  onClick={() => tool === 'eraser' ? setEraserSize(size) : setPenSize(size)}
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all ${(tool === 'eraser' ? eraserSize : penSize) === size ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+                >
+                  <div className="bg-gray-800 dark:bg-gray-200 rounded-full" style={{ width: size === 2 || size === 10 ? 4 : size === 4 || size === 20 ? 6 : 10, height: size === 2 || size === 10 ? 4 : size === 4 || size === 20 ? 6 : 10 }}></div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Workspace */}
@@ -518,12 +732,11 @@ export default function PaperViewer() {
                   height={stageHeight}
                   scaleX={scale}
                   scaleY={scale}
-                  onMouseDown={handleMouseDown}
-                  onMousemove={handleMouseMove}
-                  onMouseup={handleMouseUp}
-                  onTouchStart={handleMouseDown}
-                  onTouchMove={handleMouseMove}
-                  onTouchEnd={handleMouseUp}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  className={tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}
+                  style={{ touchAction: tool === 'select' ? 'auto' : 'none' }}
                   ref={stageRef}
                 >
                   <Layer>
@@ -531,8 +744,8 @@ export default function PaperViewer() {
                       <Line
                         key={i}
                         points={line.points}
-                        stroke={line.tool === 'eraser' ? 'white' : '#000000'}
-                        strokeWidth={line.tool === 'eraser' ? 20 : 3}
+                        stroke={line.color || (line.tool === 'eraser' ? 'white' : '#000000')}
+                        strokeWidth={line.size || (line.tool === 'eraser' ? 20 : 3)}
                         tension={0.5}
                         lineCap="round"
                         lineJoin="round"
@@ -570,7 +783,7 @@ export default function PaperViewer() {
                 </div>
                 AI Feedback
               </h3>
-              <div className="prose prose-sm max-w-none prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-headings:text-gray-900 dark:prose-headings:text-white prose-strong:text-gray-900 dark:prose-strong:text-white">
+              <div className="prose prose-sm max-w-none prose-p:text-gray-700 dark:prose-p:text-gray-200 prose-headings:text-gray-900 dark:prose-headings:text-white prose-strong:text-gray-900 dark:prose-strong:text-white prose-li:text-gray-700 dark:prose-li:text-gray-200 prose-ol:text-gray-700 dark:prose-ol:text-gray-200 prose-ul:text-gray-700 dark:prose-ul:text-gray-200 prose-markers:text-gray-500 dark:prose-markers:text-gray-400 marker:text-gray-500 dark:marker:text-gray-400">
                 <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{feedback}</ReactMarkdown>
               </div>
             </div>
@@ -602,17 +815,11 @@ export default function PaperViewer() {
       {/* AI Chat Sidebar */}
       {showChat && (
         <AIChat 
+          paperId={id || ''}
           onClose={() => setShowChat(false)} 
           paperContext={`Paper Title: ${paper.title}, Current Page: ${pageNumber}`} 
           onCaptureScreenshot={async () => {
-            if (!containerRef.current) return null;
-            try {
-              const canvas = await html2canvas(containerRef.current, { scale: 1 });
-              return canvas.toDataURL('image/jpeg').split(',')[1];
-            } catch (err) {
-              console.error('Failed to capture screenshot', err);
-              return null;
-            }
+            return captureWorkspaceScreenshot(0.8);
           }}
         />
       )}

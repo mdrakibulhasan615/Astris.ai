@@ -21,6 +21,8 @@
         "title": { "type": "string" },
         "fileUrl": { "type": "string" },
         "annotations": { "type": "string", "description": "Stringified JSON of Konva drawing data" },
+        "aiAnnotations": { "type": "string", "description": "Stringified JSON of AI response drawing data" },
+        "chatHistory": { "type": "string", "description": "Stringified JSON array of AI tutor chat history" },
         "status": { "type": "string", "enum": ["in-progress", "completed"] },
         "score": { "type": "number" },
         "updatedAt": { "type": "string", "format": "date-time" }
