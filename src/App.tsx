@@ -13,7 +13,7 @@ import PaperViewer from './components/PaperViewer';
 import Dashboard from './components/Dashboard';
 import Leaderboard from './components/Leaderboard';
 import Friends from './components/Friends';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -146,6 +146,130 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function InteractiveParticles() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    type Particle = {
+      x: number;
+      y: number;
+      originX: number;
+      originY: number;
+      vx: number;
+      vy: number;
+      size: number;
+      color: string;
+    };
+
+    const particles: Particle[] = [];
+    const numParticles = Math.floor((width * height) / 3000); // density
+
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    for (let i = 0; i < numParticles; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      particles.push({
+        x,
+        y,
+        originX: x,
+        originY: y,
+        vx: 0,
+        vy: 0,
+        size: Math.random() * 2 + 1,
+        color: isDark ? `rgba(129, 140, 248, ${Math.random() * 0.5 + 0.1})` : `rgba(99, 102, 241, ${Math.random() * 0.5 + 0.1})`,
+      });
+    }
+
+    const mouse = { x: -1000, y: -1000 };
+
+    const handleResize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    };
+    window.addEventListener('resize', handleResize);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    const handleMouseLeave = () => {
+      mouse.x = -1000;
+      mouse.y = -1000;
+    };
+    window.addEventListener('mouseleave', handleMouseLeave);
+
+    let animationId: number;
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      const mouseRadius = 120;
+      
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        
+        const dx = mouse.x - p.x;
+        const dy = mouse.y - p.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < mouseRadius) {
+          const forceDirectionX = dx / distance;
+          const forceDirectionY = dy / distance;
+          const force = (mouseRadius - distance) / mouseRadius;
+          
+          p.vx -= forceDirectionX * force * 2;
+          p.vy -= forceDirectionY * force * 2;
+        }
+
+        p.vx += (p.originX - p.x) * 0.05;
+        p.vy += (p.originY - p.y) * 0.05;
+
+        p.vx *= 0.85;
+        p.vy *= 0.85;
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      }
+
+      animationId = requestAnimationFrame(render);
+    };
+    render();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none z-0"
+    />
+  );
+}
+
 function ShootingStarCursor() {
   const [mousePosition, setMousePosition] = useState({ x: -100, y: -100 });
   const [isHovering, setIsHovering] = useState(false);
@@ -170,33 +294,36 @@ function ShootingStarCursor() {
   return (
     <>
       <motion.div
-        className="pointer-events-none fixed top-0 left-0 z-[9999] text-indigo-500 dark:text-indigo-400 drop-shadow-[0_0_10px_rgba(99,102,241,0.8)]"
+        className="pointer-events-none fixed top-0 left-0 z-[9999] bg-white rounded-full shadow-[0_0_20px_6px_rgba(99,102,241,0.8)] dark:shadow-[0_0_20px_6px_rgba(129,140,248,0.8)]"
+        animate={{
+          x: mousePosition.x - (isHovering ? 12 : 4),
+          y: mousePosition.y - (isHovering ? 12 : 4),
+          width: isHovering ? 24 : 8,
+          height: isHovering ? 24 : 8,
+          opacity: isHovering ? 0.6 : 1,
+        }}
+        transition={{ type: 'spring', stiffness: 500, damping: 28, mass: 0.5 }}
+      />
+      
+      <motion.div
+        className="pointer-events-none fixed top-0 left-0 z-[9998] bg-indigo-300 dark:bg-indigo-200 rounded-full blur-[4px] opacity-80"
+        animate={{
+          x: mousePosition.x - 8,
+          y: mousePosition.y - 8,
+          width: 16,
+          height: 16,
+        }}
+        transition={{ type: 'spring', stiffness: 150, damping: 20, mass: 0.5 }}
+      />
+      <motion.div
+        className="pointer-events-none fixed top-0 left-0 z-[9997] bg-cyan-300 dark:bg-cyan-200 rounded-full blur-[6px] opacity-60"
         animate={{
           x: mousePosition.x - 12,
           y: mousePosition.y - 12,
-          scale: isHovering ? 1.5 : 1,
-          rotate: isHovering ? 180 : 0
+          width: 24,
+          height: 24,
         }}
-        transition={{ type: 'spring', stiffness: 500, damping: 28, mass: 0.5 }}
-      >
-        <Star className="w-6 h-6 fill-indigo-500 dark:fill-indigo-400" />
-      </motion.div>
-      
-      <motion.div
-        className="pointer-events-none fixed top-0 left-0 z-[9998] w-2 h-2 bg-indigo-400 dark:bg-indigo-300 rounded-full blur-[2px]"
-        animate={{
-          x: mousePosition.x - 4,
-          y: mousePosition.y - 4,
-        }}
-        transition={{ type: 'spring', stiffness: 100, damping: 15, mass: 0.5 }}
-      />
-      <motion.div
-        className="pointer-events-none fixed top-0 left-0 z-[9997] w-1.5 h-1.5 bg-indigo-300 dark:bg-indigo-200 rounded-full blur-[1px]"
-        animate={{
-          x: mousePosition.x - 3,
-          y: mousePosition.y - 3,
-        }}
-        transition={{ type: 'spring', stiffness: 50, damping: 10, mass: 0.8 }}
+        transition={{ type: 'spring', stiffness: 80, damping: 15, mass: 0.8 }}
       />
     </>
   );
@@ -233,6 +360,7 @@ function LoginScreen() {
   return (
     <div className="min-h-screen bg-[#F5F5F7] dark:bg-[#0A0A0A] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden transition-colors duration-300 cursor-none">
       <ShootingStarCursor />
+      <InteractiveParticles />
       {/* Decorative background blurs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[100px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/20 rounded-full blur-[100px]" />
