@@ -20,7 +20,11 @@ import 'react-pdf/dist/Page/TextLayer.css';
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getAiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  return new GoogleGenAI({ apiKey });
+};
 
 export default function PaperViewer() {
   const { id } = useParams();
@@ -156,6 +160,13 @@ export default function PaperViewer() {
     setFeedback(null);
 
     try {
+      const ai = getAiClient();
+      if (!ai) {
+        setFeedback("AI capabilities are currently disabled. Please add a GEMINI_API_KEY environment variable in Vercel.");
+        setMarkingProgress(null);
+        return;
+      }
+
       // Capture the current view (PDF + Annotations)
       const canvas = await html2canvas(containerRef.current, { scale: 1.5, useCORS: true });
       const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
@@ -303,6 +314,13 @@ export default function PaperViewer() {
           }
         ]
       }`;
+
+      const ai = getAiClient();
+      if (!ai) {
+        setFeedback("AI capabilities are currently disabled. Please add a GEMINI_API_KEY environment variable in Vercel.");
+        setMarkingProgress(null);
+        return;
+      }
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',

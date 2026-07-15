@@ -6,7 +6,11 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getAiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  return new GoogleGenAI({ apiKey });
+};
 
 export default function AIChat({ onClose, paperContext, onCaptureScreenshot }: { onClose: () => void, paperContext: string, onCaptureScreenshot?: () => Promise<string | null> }) {
   const [messages, setMessages] = useState<{role: 'user'|'model', text: string}[]>([
@@ -29,6 +33,13 @@ export default function AIChat({ onClose, paperContext, onCaptureScreenshot }: {
     setLoading(true);
 
     try {
+      const ai = getAiClient();
+      if (!ai) {
+        setMessages(prev => [...prev, { role: 'model', text: 'AI capabilities are currently disabled. Please add a GEMINI_API_KEY environment variable in Vercel.' }]);
+        setLoading(false);
+        return;
+      }
+
       const history = messages.map(msg => ({
         role: msg.role,
         parts: [{ text: msg.text }]
