@@ -4,7 +4,8 @@
  */
 
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { BookOpen, Trophy, Users, Home, LogOut, Menu, X, Moon, Sun, Monitor } from 'lucide-react';
+import { BookOpen, Trophy, Users, Home, LogOut, Menu, X, Moon, Sun, Monitor, Star } from 'lucide-react';
+import { motion } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { signInWithGoogle, signInWithEmail, logout } from './lib/firebase';
@@ -70,7 +71,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             <div className="bg-indigo-500 text-white p-2 rounded-xl shadow-sm">
               <BookOpen className="w-5 h-5" />
             </div>
-            PaperMark
+            Astris.ai
           </h1>
           <button className="md:hidden text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-800 p-2 rounded-full" onClick={() => setSidebarOpen(false)}>
             <X className="w-4 h-4" />
@@ -131,7 +132,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-              PaperMark
+              Astris.ai
             </h1>
           </div>
           <ThemeToggle />
@@ -142,6 +143,62 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </main>
     </div>
+  );
+}
+
+function ShootingStarCursor() {
+  const [mousePosition, setMousePosition] = useState({ x: -100, y: -100 });
+  const [isHovering, setIsHovering] = useState(false);
+
+  useEffect(() => {
+    const updateMousePosition = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+      
+      const target = e.target as HTMLElement;
+      setIsHovering(
+        window.getComputedStyle(target).cursor === 'pointer' ||
+        target.tagName.toLowerCase() === 'button' ||
+        target.tagName.toLowerCase() === 'a' ||
+        target.tagName.toLowerCase() === 'input'
+      );
+    };
+
+    window.addEventListener('mousemove', updateMousePosition);
+    return () => window.removeEventListener('mousemove', updateMousePosition);
+  }, []);
+
+  return (
+    <>
+      <motion.div
+        className="pointer-events-none fixed top-0 left-0 z-[9999] text-indigo-500 dark:text-indigo-400 drop-shadow-[0_0_10px_rgba(99,102,241,0.8)]"
+        animate={{
+          x: mousePosition.x - 12,
+          y: mousePosition.y - 12,
+          scale: isHovering ? 1.5 : 1,
+          rotate: isHovering ? 180 : 0
+        }}
+        transition={{ type: 'spring', stiffness: 500, damping: 28, mass: 0.5 }}
+      >
+        <Star className="w-6 h-6 fill-indigo-500 dark:fill-indigo-400" />
+      </motion.div>
+      
+      <motion.div
+        className="pointer-events-none fixed top-0 left-0 z-[9998] w-2 h-2 bg-indigo-400 dark:bg-indigo-300 rounded-full blur-[2px]"
+        animate={{
+          x: mousePosition.x - 4,
+          y: mousePosition.y - 4,
+        }}
+        transition={{ type: 'spring', stiffness: 100, damping: 15, mass: 0.5 }}
+      />
+      <motion.div
+        className="pointer-events-none fixed top-0 left-0 z-[9997] w-1.5 h-1.5 bg-indigo-300 dark:bg-indigo-200 rounded-full blur-[1px]"
+        animate={{
+          x: mousePosition.x - 3,
+          y: mousePosition.y - 3,
+        }}
+        transition={{ type: 'spring', stiffness: 50, damping: 10, mass: 0.8 }}
+      />
+    </>
   );
 }
 
@@ -174,7 +231,8 @@ function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] dark:bg-[#0A0A0A] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-[#F5F5F7] dark:bg-[#0A0A0A] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden transition-colors duration-300 cursor-none">
+      <ShootingStarCursor />
       {/* Decorative background blurs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[100px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/20 rounded-full blur-[100px]" />
@@ -190,7 +248,7 @@ function LoginScreen() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-          PaperMark
+          Astris.ai
         </h2>
         <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400 font-medium">
           Practice, annotate, and get AI-powered feedback.
