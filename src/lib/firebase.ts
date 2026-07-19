@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -44,5 +44,18 @@ export const logout = async () => {
     await signOut(auth);
   } catch (error) {
     console.error("Error signing out", error);
+  }
+};
+
+export const signInWithApple = async () => {
+  const provider = new OAuthProvider('apple.com');
+  try {
+    if (Capacitor.isNativePlatform()) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      await signInWithPopup(auth, provider);
+    }
+  } catch (error) {
+    console.error("Error signing in with Apple", error);
   }
 };

@@ -8,7 +8,7 @@ import { Trophy, Users, Home, LogOut, Menu, X, Moon, Sun, Monitor, Star } from '
 import { motion } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-import { signInWithGoogle, signInWithEmail, logout } from './lib/firebase';
+import { signInWithGoogle, signInWithEmail, logout, signInWithApple } from './lib/firebase';
 import PaperViewer from './components/PaperViewer';
 import Dashboard from './components/Dashboard';
 import Leaderboard from './components/Leaderboard';
@@ -446,7 +446,7 @@ function LoginScreen() {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 flex flex-col gap-3">
               <button
                 onClick={signInWithGoogle}
                 className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-sm text-sm font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95"
@@ -470,6 +470,15 @@ function LoginScreen() {
                   />
                 </svg>
                 Google
+              </button>
+              <button
+                onClick={signInWithApple}
+                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-sm text-sm font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95"
+              >
+                <svg className="w-5 h-5 dark:fill-white" viewBox="0 0 384 512" fill="black">
+                  <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+                </svg>
+                Apple
               </button>
             </div>
           </div>
