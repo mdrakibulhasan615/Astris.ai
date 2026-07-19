@@ -13,6 +13,8 @@ import PaperViewer from './components/PaperViewer';
 import Dashboard from './components/Dashboard';
 import Leaderboard from './components/Leaderboard';
 import Friends from './components/Friends';
+import TermsOfService from './components/TermsOfService';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import { useState, useEffect, useRef } from 'react';
 
 function ThemeToggle() {
@@ -481,6 +483,13 @@ function LoginScreen() {
                 Apple
               </button>
             </div>
+            
+            <p className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+              By clicking continue, you agree to our{' '}
+              <a href="/terms" className="underline hover:text-gray-900 dark:hover:text-white transition-colors">Terms of Service</a>{' '}
+              and{' '}
+              <a href="/privacy" className="underline hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</a>.
+            </p>
           </div>
         </div>
       </div>
@@ -519,6 +528,8 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginScreen />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout>
