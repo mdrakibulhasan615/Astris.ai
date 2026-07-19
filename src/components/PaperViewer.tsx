@@ -518,9 +518,9 @@ export default function PaperViewer() {
   if (!paper) return <div className="p-8">Loading paper...</div>;
 
   return (
-    <div className="flex flex-col h-screen bg-[#F5F5F7] dark:bg-[#0A0A0A] relative font-sans transition-colors duration-300">
+    <div className="fixed inset-0 flex flex-col h-[100dvh] bg-[#F5F5F7] dark:bg-[#0A0A0A] font-sans transition-colors duration-300">
       {/* Top Bar */}
-      <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 px-4 md:px-8 py-4 flex items-center justify-between shadow-sm z-30 relative">
+      <div className="shrink-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 px-4 md:px-8 py-4 flex items-center justify-between shadow-sm z-30 relative">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/')} className="p-2.5 bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full transition-all shadow-sm active:scale-95 border border-gray-200/50 dark:border-gray-700/50">
             <ArrowLeft className="w-5 h-5" />
@@ -633,7 +633,7 @@ export default function PaperViewer() {
       </div>
 
       {/* Mobile Tools (visible only on small screens) */}
-      <div className="sm:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 p-2 flex flex-col gap-2 z-20 sticky top-0">
+      <div className="shrink-0 sm:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 p-2 flex flex-col gap-2 z-20 sticky top-0">
         <div className="flex justify-center gap-2">
           <button 
             onClick={() => setTool('select')}
@@ -793,7 +793,7 @@ export default function PaperViewer() {
       
       {/* Pagination */}
       {numPages && numPages > 1 && (
-        <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 p-4 flex justify-center items-center gap-6 z-20 pb-safe">
+        <div className="shrink-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 p-4 flex justify-center items-center gap-6 z-20 pb-[env(safe-area-inset-bottom,16px)]">
           <button 
             disabled={pageNumber <= 1}
             onClick={() => setPageNumber(p => p - 1)}

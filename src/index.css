@@ -7,3 +7,12 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
+
+@layer base {
+  html, body {
+    @apply h-full w-full overflow-hidden fixed inset-0;
+  }
+  #root {
+    @apply h-full w-full;
+  }
+}

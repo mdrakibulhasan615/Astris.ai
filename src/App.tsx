@@ -55,7 +55,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, [location.pathname]);
 
   return (
-    <div className="flex h-screen bg-[#F5F5F7] dark:bg-[#0A0A0A] text-gray-900 dark:text-gray-100 overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex h-[100dvh] bg-[#F5F5F7] dark:bg-[#0A0A0A] text-gray-900 dark:text-gray-100 overflow-hidden font-sans transition-colors duration-300">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
