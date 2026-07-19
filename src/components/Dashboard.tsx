@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Upload, FileText, Plus } from 'lucide-react';
+import { Upload, FileText, Plus, Trash2 } from 'lucide-react';
 import localforage from 'localforage';
+import { motion } from 'motion/react';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const [papers, setPapers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPapers = async () => {
@@ -53,6 +55,31 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeletePaper = async (e: React.MouseEvent, paperId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (confirmDeleteId !== paperId) {
+      setConfirmDeleteId(paperId);
+      // Optional: Auto-reset confirmation after 3 seconds
+      setTimeout(() => {
+        setConfirmDeleteId(current => current === paperId ? null : current);
+      }, 3000);
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'user_papers', paperId));
+      await localforage.removeItem(`paper_${paperId}`);
+      setPapers(papers.filter(p => p.id !== paperId));
+    } catch (error) {
+      console.error("Error deleting paper:", error);
+      alert("Failed to delete paper.");
+    } finally {
+      setConfirmDeleteId(null);
+    }
+  };
+
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -88,7 +115,7 @@ export default function Dashboard() {
           <p className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight">-</p>
         </div>
         <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-sm border border-white dark:border-gray-800 flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 dark:bg-purple-500/10 rounded-full group-hover:scale-150 transition-transform duration-500" />
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#6366F1]/5 dark:bg-[#6366F1]/10 rounded-full group-hover:scale-150 transition-transform duration-500" />
           <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 tracking-wide uppercase">Global Rank</h3>
           <p className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight">#42</p>
         </div>
@@ -98,7 +125,15 @@ export default function Dashboard() {
         <h3 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Your Papers</h3>
         
         {loading ? (
-          <div className="text-center py-20 text-gray-500 dark:text-gray-400 font-medium animate-pulse">Loading your papers...</div>
+          <div className="flex justify-center items-center py-20">
+            <motion.img 
+              src="/logo.png" 
+              alt="Loading..."
+              animate={{ rotateY: 360 }}
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+              className="w-12 h-12 object-contain dark:invert dark:brightness-0"
+            />
+          </div>
         ) : papers.length === 0 ? (
           <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border-2 border-dashed border-gray-300/50 dark:border-gray-700/50 rounded-3xl p-16 text-center transition-all hover:bg-white/80 dark:hover:bg-gray-900/80">
             <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner dark:shadow-none">
@@ -120,9 +155,15 @@ export default function Dashboard() {
                   <div className="w-14 h-14 bg-gray-50 dark:bg-gray-800 text-indigo-500 rounded-2xl flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors shadow-sm dark:shadow-none">
                     <FileText className="w-7 h-7" />
                   </div>
-                  <span className={`px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm dark:shadow-none ${paper.status === 'completed' ? 'bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 backdrop-blur-md' : 'bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 backdrop-blur-md'}`}>
-                    {paper.status === 'completed' ? 'Completed' : 'In Progress'}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className={`px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm dark:shadow-none ${paper.status === 'completed' ? 'bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 backdrop-blur-md' : 'bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 backdrop-blur-md'}`}>
+                      {paper.status === 'completed' ? 'Completed' : 'In Progress'}
+                    </span>
+                    <button onClick={(e) => handleDeletePaper(e, paper.id)} className={`p-1.5 flex items-center gap-1.5 rounded-lg transition-colors ${confirmDeleteId === paper.id ? 'bg-red-500 text-white animate-pulse shadow-sm scale-105' : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'}`} title="Delete Paper">
+                      <Trash2 className="w-4 h-4" />
+                      {confirmDeleteId === paper.id && <span className="pr-1 text-[10px] font-semibold tracking-tight">Confirm?</span>}
+                    </button>
+                  </div>
                 </div>
                 <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{paper.title}</h4>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-auto">Modified {new Date(paper.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>

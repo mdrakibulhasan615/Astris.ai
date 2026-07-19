@@ -4,7 +4,7 @@
  */
 
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { BookOpen, Trophy, Users, Home, LogOut, Menu, X, Moon, Sun, Monitor, Star } from 'lucide-react';
+import { Trophy, Users, Home, LogOut, Menu, X, Moon, Sun, Monitor, Star } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
@@ -68,9 +68,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}`}>
         <div className="p-8 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 tracking-tight">
-            <div className="bg-indigo-500 text-white p-2 rounded-xl shadow-sm">
-              <BookOpen className="w-5 h-5" />
-            </div>
+            <img src="/logo.png" alt="Astris.ai Logo" className="w-[50px] h-[50px] object-contain dark:invert dark:brightness-0" />
             Astris.ai
           </h1>
           <button className="md:hidden text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-800 p-2 rounded-full" onClick={() => setSidebarOpen(false)}>
@@ -337,7 +335,17 @@ function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center dark:bg-[#0A0A0A] dark:text-white transition-colors duration-300">Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center dark:bg-[#0A0A0A] bg-white transition-colors duration-300">
+        <motion.img 
+          src="/logo.png" 
+          alt="Loading..."
+          animate={{ rotateY: 360 }}
+          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+          className="w-16 h-16 object-contain dark:invert dark:brightness-0"
+        />
+      </div>
+    );
   }
 
   if (user) {
@@ -363,7 +371,7 @@ function LoginScreen() {
       <InteractiveParticles />
       {/* Decorative background blurs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[100px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/20 rounded-full blur-[100px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#6366F1]/20 rounded-full blur-[100px]" />
       
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
@@ -371,8 +379,8 @@ function LoginScreen() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-indigo-500 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-indigo-500/30">
-            <BookOpen className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-indigo-500 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-indigo-500/30 overflow-hidden">
+            <img src="/logo.png" alt="Astris.ai Logo" className="w-[68px] h-[68px] object-contain invert brightness-0" />
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
@@ -475,7 +483,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center dark:bg-[#0A0A0A] dark:text-white transition-colors duration-300">Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center dark:bg-[#0A0A0A] bg-white transition-colors duration-300">
+        <motion.img 
+          src="/logo.png" 
+          alt="Loading..."
+          animate={{ rotateY: 360 }}
+          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+          className="w-16 h-16 object-contain dark:invert dark:brightness-0"
+        />
+      </div>
+    );
   }
 
   if (!user) {

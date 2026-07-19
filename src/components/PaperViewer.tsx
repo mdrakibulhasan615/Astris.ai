@@ -13,6 +13,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import AIChat from './AIChat';
+import { motion } from 'motion/react';
 import localforage from 'localforage';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -33,6 +34,28 @@ const getAiClient = () => {
   });
 };
 
+const ZenoLoading = () => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress((prev) => prev + (100 - prev) / 2);
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="w-48 h-1.5 bg-gray-800 dark:bg-gray-800/50 rounded-full overflow-hidden mt-6 relative shadow-inner">
+      <motion.div 
+        className="h-full bg-white dark:bg-white/90"
+        initial={{ width: 0 }}
+        animate={{ width: `${progress}%` }}
+        transition={{ duration: 0.5, ease: "linear" }}
+      />
+    </div>
+  );
+};
+
 export default function PaperViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -44,7 +67,7 @@ export default function PaperViewer() {
   const [pdfFile, setPdfFile] = useState<any>(null);
   
   // Drawing state
-  const [tool, setTool] = useState<'pen' | 'eraser' | 'highlighter' | 'select'>('pen');
+  const [tool, setTool] = useState<'pen' | 'eraser' | 'highlighter' | 'select'>('select');
   const [pencilOnly, setPencilOnly] = useState(false);
   const [penColor, setPenColor] = useState<string>('#000000');
   const [penSize, setPenSize] = useState<number>(3);
@@ -337,26 +360,14 @@ export default function PaperViewer() {
       
       setAiAnnotations(updatedAiAnnotations);
       
-      // Update score and annotations in DB
+      // Update annotations in DB for this page
       const docRef = doc(db, 'user_papers', id);
-      const numericScore = parseScoreToPercent(result.score) || paper.score || 0;
       await updateDoc(docRef, {
-        score: numericScore,
-        status: 'completed',
         aiAnnotations: JSON.stringify(updatedAiAnnotations),
         updatedAt: new Date().toISOString()
       });
       
-      // Update user's total papers completed if this is the first time it's marked
-      if (paper.status !== 'completed' && result.score !== undefined) {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          await updateDoc(userRef, {
-            papersCompleted: (userSnap.data().papersCompleted || 0) + 1
-          });
-        }
-      }
+      // Do NOT set status to 'completed' or update global score when only marking one page
     } catch (error: any) {
       console.error("Error marking paper:", error);
       alert("Failed to mark paper: " + (error?.message || JSON.stringify(error) || "Unknown error"));
@@ -515,7 +526,22 @@ export default function PaperViewer() {
     }
   };
 
-  if (!paper) return <div className="p-8">Loading paper...</div>;
+  if (!paper) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black font-sans z-50">
+        <div className="flex flex-col items-center">
+          <motion.img 
+            src="/logo.png" 
+            alt="Loading..."
+            animate={{ rotateY: 360 }}
+            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+            className="w-16 h-16 object-contain invert brightness-0"
+          />
+          <ZenoLoading />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 flex flex-col h-[100dvh] bg-[#F5F5F7] dark:bg-[#0A0A0A] font-sans transition-colors duration-300">
@@ -695,12 +721,18 @@ export default function PaperViewer() {
       </div>
 
       {/* Main Workspace */}
-      <div className="flex-1 overflow-auto flex flex-col items-center p-4 md:p-8 relative">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-none flex flex-col items-center p-4 md:p-8 relative" style={{ WebkitOverflowScrolling: 'touch' }}>
         {markingProgress && (
           <div className="absolute inset-0 z-50 bg-white/40 dark:bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center">
             <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl p-10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] flex flex-col items-center max-w-sm text-center border border-white dark:border-gray-700">
               <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-6 shadow-inner dark:shadow-none">
-                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                <motion.img 
+                  src="/logo.png" 
+                  alt="Loading..."
+                  animate={{ rotateY: 360 }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  className="w-8 h-8 object-contain dark:invert dark:brightness-0"
+                />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">AI is working</h3>
               <p className="text-gray-500 dark:text-gray-400 font-medium">{markingProgress}</p>

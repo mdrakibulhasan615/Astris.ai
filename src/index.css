@@ -11,8 +11,11 @@
 @layer base {
   html, body {
     @apply h-full w-full overflow-hidden fixed inset-0;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
   }
   #root {
-    @apply h-full w-full;
+    @apply h-full w-full overflow-hidden flex flex-col;
+    overscroll-behavior: none;
   }
 }

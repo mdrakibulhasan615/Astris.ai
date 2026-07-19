@@ -4,7 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import 'katex/dist/katex.min.css';
 
@@ -111,7 +111,7 @@ export default function AIChat({
     try {
       const docRef = doc(db, 'user_papers', paperId);
       await updateDoc(docRef, {
-        chatHistory: null,
+        chatHistory: deleteField(),
         updatedAt: new Date().toISOString()
       });
       setMessages([
