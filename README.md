@@ -6,9 +6,11 @@
 ## Collaborators
 MD Rakibul Hasan [https://github.com/mdrakibulhasan615]  
 Mohammad Saadaan [https://github.com/strawdile]
+
 ---
 ## Website
 https://astris-ai.vercel.app/
+
 ---
 ## Features
 
