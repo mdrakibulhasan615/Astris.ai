@@ -508,8 +508,14 @@ export default function PaperViewer() {
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const todayIso = new Date().toISOString();
+          const currentStreak = (userData.streak || 0) + 1;
           await updateDoc(userRef, {
-            papersCompleted: (userSnap.data().papersCompleted || 0) + 1
+            papersCompleted: (userData.papersCompleted || 0) + 1,
+            streak: currentStreak,
+            longestStreak: Math.max(userData.longestStreak || 0, currentStreak),
+            lastPracticeDate: todayIso,
           });
         }
       }
@@ -535,7 +541,7 @@ export default function PaperViewer() {
             alt="Loading..."
             animate={{ rotateY: 360 }}
             transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-            className="w-16 h-16 object-contain invert brightness-0"
+            className="w-16 h-16 object-contain filter drop-shadow"
           />
           <ZenoLoading />
         </div>
@@ -725,13 +731,13 @@ export default function PaperViewer() {
         {markingProgress && (
           <div className="absolute inset-0 z-50 bg-white/40 dark:bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center">
             <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl p-10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] flex flex-col items-center max-w-sm text-center border border-white dark:border-gray-700">
-              <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-6 shadow-inner dark:shadow-none">
+              <div className="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/25 p-3">
                 <motion.img 
                   src="/logo.png" 
                   alt="Loading..."
                   animate={{ rotateY: 360 }}
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                  className="w-8 h-8 object-contain dark:invert dark:brightness-0"
+                  className="w-full h-full object-contain filter drop-shadow"
                 />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">AI is working</h3>

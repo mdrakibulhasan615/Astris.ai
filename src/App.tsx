@@ -70,7 +70,9 @@ function Layout({ children }: { children: React.ReactNode }) {
       <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}`}>
         <div className="p-8 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 tracking-tight">
-            <img src="/logo.png" alt="Astris.ai Logo" className="w-[50px] h-[50px] object-contain dark:invert dark:brightness-0" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center p-2 shadow-md shadow-indigo-500/20 shrink-0">
+              <img src="/logo.png" alt="Astris.ai Logo" className="w-full h-full object-contain filter drop-shadow" />
+            </div>
             Astris.ai
           </h1>
           <button className="md:hidden text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-800 p-2 rounded-full" onClick={() => setSidebarOpen(false)}>
@@ -339,13 +341,15 @@ function LoginScreen() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center dark:bg-[#0A0A0A] bg-white transition-colors duration-300">
-        <motion.img 
-          src="/logo.png" 
-          alt="Loading..."
-          animate={{ rotateY: 360 }}
-          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-          className="w-16 h-16 object-contain dark:invert dark:brightness-0"
-        />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center p-2.5 shadow-xl shadow-indigo-500/25">
+          <motion.img 
+            src="/logo.png" 
+            alt="Loading..."
+            animate={{ rotateY: 360 }}
+            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+            className="w-full h-full object-contain filter drop-shadow"
+          />
+        </div>
       </div>
     );
   }
@@ -368,92 +372,91 @@ function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] dark:bg-[#0A0A0A] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden transition-colors duration-300 cursor-none">
+    <div className="min-h-[100dvh] w-full bg-[#F5F5F7] dark:bg-[#0A0A0A] flex flex-col justify-center items-center py-4 sm:py-6 px-4 font-sans relative overflow-y-auto transition-colors duration-300">
       <ShootingStarCursor />
       <InteractiveParticles />
       {/* Decorative background blurs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[100px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#6366F1]/20 rounded-full blur-[100px]" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#6366F1]/20 rounded-full blur-[100px] pointer-events-none" />
       
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+      <div className="w-full max-w-[420px] my-auto relative z-10 flex flex-col items-center">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-indigo-500 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-indigo-500/30 overflow-hidden">
-            <img src="/logo.png" alt="Astris.ai Logo" className="w-[68px] h-[68px] object-contain invert brightness-0" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 flex items-center justify-center shadow-xl shadow-indigo-500/25 border border-white/20 p-2 sm:p-2.5">
+            <img src="/logo.png" alt="Astris.ai Logo" className="w-full h-full object-contain filter drop-shadow" />
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+        <h2 className="mt-3 text-center text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
           Astris.ai
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400 font-medium">
+        <p className="mt-1 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
           Practice, annotate, and get AI-powered feedback.
         </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl py-8 px-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-[2rem] sm:px-10 border border-white dark:border-gray-800">
+        <div className="mt-4 sm:mt-5 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl py-5 sm:py-6 px-5 sm:px-7 shadow-[0_8px_30px_rgb(0,0,0,0.05)] rounded-2xl sm:rounded-3xl border border-white dark:border-gray-800">
           
-          <form className="space-y-6" onSubmit={handleEmailLogin}>
+          <form className="space-y-3.5" onSubmit={handleEmailLogin}>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Email address</label>
-              <div className="mt-2">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Email address</label>
+              <div className="mt-1">
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 sm:text-sm transition-all backdrop-blur-sm dark:text-white"
+                  className="appearance-none block w-full px-3.5 py-2.5 bg-white/60 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-sm transition-all backdrop-blur-sm dark:text-white"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Password</label>
-              <div className="mt-2">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Password</label>
+              <div className="mt-1">
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 sm:text-sm transition-all backdrop-blur-sm dark:text-white"
+                  className="appearance-none block w-full px-3.5 py-2.5 bg-white/60 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-sm transition-all backdrop-blur-sm dark:text-white"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
-            {error && <div className="text-red-500 text-sm font-medium bg-red-50/50 dark:bg-red-500/10 p-3 rounded-xl border border-red-100 dark:border-red-900/50">{error}</div>}
+            {error && <div className="text-red-500 text-xs font-medium bg-red-50/50 dark:bg-red-500/10 p-2.5 rounded-xl border border-red-100 dark:border-red-900/50">{error}</div>}
 
-            <div>
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-md shadow-indigo-500/25 text-sm font-bold text-white bg-indigo-500 hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all active:scale-95"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-md shadow-indigo-500/25 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all active:scale-95"
               >
                 {isSubmitting ? 'Signing in...' : 'Sign in / Register'}
               </button>
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-3.5">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200 dark:border-gray-700" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 font-medium rounded-full">Or continue with</span>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-3 bg-white/80 dark:bg-gray-900/80 text-gray-500 dark:text-gray-400 font-medium rounded-full">Or continue with</span>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3">
+            <div className="mt-3.5 grid grid-cols-2 gap-2.5">
               <button
+                type="button"
                 onClick={signInWithGoogle}
-                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-sm text-sm font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95"
+                className="flex justify-center items-center gap-2 py-2.5 px-3 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-sm text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white/60 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                     fill="#4285F4"
@@ -471,20 +474,21 @@ function LoginScreen() {
                     fill="#EA4335"
                   />
                 </svg>
-                Google
+                <span>Google</span>
               </button>
               <button
+                type="button"
                 onClick={signInWithApple}
-                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-sm text-sm font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95"
+                className="flex justify-center items-center gap-2 py-2.5 px-3 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-sm text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white/60 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95"
               >
-                <svg className="w-5 h-5 dark:fill-white" viewBox="0 0 384 512" fill="black">
+                <svg className="w-4 h-4 shrink-0 dark:fill-white" viewBox="0 0 384 512" fill="currentColor">
                   <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
                 </svg>
-                Apple
+                <span>Apple</span>
               </button>
             </div>
             
-            <p className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-4 text-center text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
               By clicking continue, you agree to our{' '}
               <a href="/terms" className="underline hover:text-gray-900 dark:hover:text-white transition-colors">Terms of Service</a>{' '}
               and{' '}
@@ -503,13 +507,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center dark:bg-[#0A0A0A] bg-white transition-colors duration-300">
-        <motion.img 
-          src="/logo.png" 
-          alt="Loading..."
-          animate={{ rotateY: 360 }}
-          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-          className="w-16 h-16 object-contain dark:invert dark:brightness-0"
-        />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center p-2.5 shadow-xl shadow-indigo-500/25">
+          <motion.img 
+            src="/logo.png" 
+            alt="Loading..."
+            animate={{ rotateY: 360 }}
+            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+            className="w-full h-full object-contain filter drop-shadow"
+          />
+        </div>
       </div>
     );
   }

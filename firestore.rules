@@ -46,11 +46,14 @@ service cloud.firestore {
 
     // Domain Validators
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'papersCompleted']) &&
+      return hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'papersCompleted', 'streak', 'longestStreak', 'lastPracticeDate']) &&
              data.uid is string && data.uid.size() > 0 && data.uid.size() < 100 &&
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
              (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 500)) &&
-             data.papersCompleted is number && data.papersCompleted >= 0;
+             data.papersCompleted is number && data.papersCompleted >= 0 &&
+             (!('streak' in data) || (data.streak is number && data.streak >= 0)) &&
+             (!('longestStreak' in data) || (data.longestStreak is number && data.longestStreak >= 0)) &&
+             (!('lastPracticeDate' in data) || (data.lastPracticeDate is string && data.lastPracticeDate.size() < 50));
     }
 
     function isValidUserPaper(data) {
