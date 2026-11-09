@@ -3,6 +3,9 @@
 **Astris.ai** is an AI-powered past-paper revision platform that helps students practice exam papers online, annotate solutions, get instant AI grading, and receive real-time help on difficult questions.
 
 ---
+## Collaborators
+MD Rakibul Hasan [https://github.com/mdrakibulhasan615]  
+Mohammad Saadaan [https://github.com/strawdile]
 
 ## Features
 
